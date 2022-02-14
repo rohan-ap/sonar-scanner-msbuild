@@ -548,6 +548,17 @@ public class ScannerMSBuildTest {
     validateRazorProject(projectName);
   }
 
+  // regression test for https://github.com/SonarSource/sonar-scanner-msbuild/issues/1199
+  @Test
+  public void testRazorCompilationNet6OverwriteSonarErrorLog() throws IOException {
+    String projectName = "RazorWebApplication.net6.overwriteSonarErrorLog";
+    // needs to execute without source generators
+    assertProjectFileContains(projectName, "<UseRazorSourceGenerator>false</UseRazorSourceGenerator>");
+    // this creates the condition for the regression
+    assertProjectFileContains(projectName, "<SonarErrorLog></SonarErrorLog>");
+    validateRazorProject(projectName);
+  }
+
   @Test
   public void testRazorCompilationNet6WithSourceGenerators() throws IOException {
     String projectName = "RazorWebApplication.net6.withSourceGenerators";

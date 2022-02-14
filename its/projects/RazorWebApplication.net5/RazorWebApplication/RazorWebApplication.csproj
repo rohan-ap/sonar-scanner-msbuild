@@ -9,9 +9,4 @@
     <PackageReference Include="System.Net.Http" Version="4.3.4" />
   </ItemGroup>
 
-  <Target Name="OverrideErrorLog" AfterTargets="CoreCompile" BeforeTargets="RazorCoreCompile">
-	<PropertyGroup>
-		<SonarErrorLog></SonarErrorLog>
-	</PropertyGroup>
-  </Target>
 </Project>
