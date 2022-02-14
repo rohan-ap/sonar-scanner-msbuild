@@ -556,7 +556,8 @@ public class ScannerMSBuildTest {
     assertProjectFileContains(projectName, "<UseRazorSourceGenerator>false</UseRazorSourceGenerator>");
     // this creates the condition for the regression
     assertProjectFileContains(projectName, "<SonarErrorLog></SonarErrorLog>");
-    validateRazorProject(projectName);
+    // when the SonarErrorLog is overwritten, no issues are loaded
+    validateRazorProject(projectName, false);
   }
 
   @Test
@@ -864,6 +865,10 @@ public class ScannerMSBuildTest {
   }
 
   private void validateRazorProject(String projectName) throws IOException {
+    validateRazorProject(projectName, true);
+  }
+
+  private void validateRazorProject(String projectName, boolean hasIssues) throws IOException {
     String localProjectKey = PROJECT_KEY + projectName;
     ORCHESTRATOR.getServer().provisionProject(localProjectKey, projectName);
 
@@ -886,13 +891,19 @@ public class ScannerMSBuildTest {
     assertTrue(result.isSuccess());
 
     List<Issue> issues = TestUtils.allIssues(ORCHESTRATOR);
-    List<String> ruleKeys = issues.stream().map(Issue::getRule).collect(Collectors.toList());
-
-    assertThat(ruleKeys).containsAll(Arrays.asList("csharpsquid:S1118", "csharpsquid:S1186"));
-
-    assertThat(TestUtils.getMeasureAsInteger(localProjectKey, "lines", ORCHESTRATOR)).isEqualTo(49);
-    assertThat(TestUtils.getMeasureAsInteger(localProjectKey, "ncloc", ORCHESTRATOR)).isEqualTo(39);
-    assertThat(TestUtils.getMeasureAsInteger(localProjectKey, "files", ORCHESTRATOR)).isEqualTo(2);
+    if (hasIssues) {
+      List<String> ruleKeys = issues.stream().map(Issue::getRule).collect(Collectors.toList());
+      assertThat(ruleKeys).containsAll(Arrays.asList("csharpsquid:S1118", "csharpsquid:S1186"));
+      assertThat(TestUtils.getMeasureAsInteger(localProjectKey, "lines", ORCHESTRATOR)).isEqualTo(49);
+      assertThat(TestUtils.getMeasureAsInteger(localProjectKey, "ncloc", ORCHESTRATOR)).isEqualTo(39);
+      assertThat(TestUtils.getMeasureAsInteger(localProjectKey, "files", ORCHESTRATOR)).isEqualTo(2);
+    }
+    else {
+      assertThat(issues).isEmpty();
+      assertThat(TestUtils.getMeasureAsInteger(localProjectKey, "lines", ORCHESTRATOR)).isEqualTo(96); //
+      assertThat(TestUtils.getMeasureAsInteger(localProjectKey, "ncloc", ORCHESTRATOR)).isNull();
+      assertThat(TestUtils.getMeasureAsInteger(localProjectKey, "files", ORCHESTRATOR)).isEqualTo(5);
+    }
   }
 
   private void testExcludedAndTest(boolean excludeTestProjects, int expectedTestProjectIssues) throws Exception {
