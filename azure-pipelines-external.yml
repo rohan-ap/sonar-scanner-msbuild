@@ -20,9 +20,9 @@ stages:
       steps:
       - checkout: self
       - task: NuGetToolInstaller@1
-        displayName: 'Use NuGet 5.8.1'
+        displayName: 'Use NuGet 6.2'
         inputs:
-          versionSpec: '5.8.1'
+          versionSpec: '6.2.x'
       - task: DotNetCoreCLI@2
         displayName: Dotnet restore $(tfsProcessorSolution)
         inputs:

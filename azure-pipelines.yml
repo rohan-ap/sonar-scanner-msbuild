@@ -53,9 +53,9 @@ stages:
       steps:
       - checkout: self
       - task: NuGetToolInstaller@1
-        displayName: 'Use NuGet 5.7.0'
+        displayName: 'Use NuGet 6.2'
         inputs:
-          versionSpec: '5.7.0'
+          versionSpec: '6.2.x'
       - task: CacheBeta@0
         enabled: true
         displayName: Cache Maven local repo
@@ -501,7 +501,7 @@ stages:
                Write-Host "##vso[task.setvariable variable=JDK_PATH]$JAVA_HOME_11_X64"
        - task: NuGetToolInstaller@1
          inputs:
-          versionSpec: '5.8.0'
+          versionSpec: '6.2.x'
        - task: PowerShell@2
          displayName: "Get version from artifact file"
          inputs:
