@@ -85,6 +85,12 @@ namespace SonarScanner.MSBuild.PreProcessor
                     logger.LogError(Resources.ERR_UnlicensedServer, localSettings.SonarQubeUrl);
                     return false;
                 }
+
+                if (!await server.ProjectExists(localSettings.ProjectKey))
+                {
+                    logger.LogError(Resources.ERR_ProjectDoesNotExist, localSettings.ProjectKey);
+                    return false;
+                }
             }
             catch (Exception ex)
             {

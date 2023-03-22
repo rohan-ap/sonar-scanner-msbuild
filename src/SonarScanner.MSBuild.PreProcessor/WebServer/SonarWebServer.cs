@@ -23,6 +23,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using SonarScanner.MSBuild.Common;
@@ -53,6 +54,28 @@ namespace SonarScanner.MSBuild.PreProcessor.WebServer
         }
 
         public abstract Task<bool> IsServerLicenseValid();
+
+        public async Task<bool> ProjectExists(string projectKey)
+        {
+            var uri = GetUri("api/components/tree?qualifiers=TRK&component={0}", projectKey);
+            logger.LogDebug(Resources.MSG_CheckingProjectExist, projectKey);
+
+            return await ExecuteWithLogs(async () =>
+            {
+                var response = await downloader.DownloadResource(uri);
+                switch (response.StatusCode)
+                {
+                    case HttpStatusCode.NotFound:
+                        return false;
+                    case HttpStatusCode.OK:
+                        return true;
+                    default:
+                        // TODO: How do we want to handle this case (which might not happen)?
+                        logger.LogError(Resources.ERR_UnexpectedHttpStatusCode, response.StatusCode);
+                        throw new HttpRequestException();
+                }
+            }, uri);
+        }
 
         public async Task<Tuple<bool, string>> TryGetQualityProfile(string projectKey, string projectBranch, string language)
         {

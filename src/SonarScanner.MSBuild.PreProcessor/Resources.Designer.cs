@@ -123,6 +123,24 @@ namespace SonarScanner.MSBuild.PreProcessor {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The provided project key does not exist. Project key: {0}.
+        /// </summary>
+        internal static string ERR_ProjectDoesNotExist {
+            get {
+                return ResourceManager.GetString("ERR_ProjectDoesNotExist", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unexpected HTTP Status code: {0}.
+        /// </summary>
+        internal static string ERR_UnexpectedHttpStatusCode {
+            get {
+                return ResourceManager.GetString("ERR_UnexpectedHttpStatusCode", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Your SonarQube instance seems to have an invalid license. Please check it. Server url: {0}.
         /// </summary>
         internal static string ERR_UnlicensedServer {
@@ -221,6 +239,15 @@ namespace SonarScanner.MSBuild.PreProcessor {
         internal static string MSG_CheckingLicenseValidity {
             get {
                 return ResourceManager.GetString("MSG_CheckingLicenseValidity", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Checking if project &apos;{0}&apos; exists....
+        /// </summary>
+        internal static string MSG_CheckingProjectExist {
+            get {
+                return ResourceManager.GetString("MSG_CheckingProjectExist", resourceCulture);
             }
         }
         

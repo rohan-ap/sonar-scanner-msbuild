@@ -66,6 +66,8 @@ namespace SonarScanner.MSBuild.PreProcessor.Test
             return IsServerLicenseValidImplementation();
         }
 
+        public Task<bool> ProjectExists(string projectKey) => Task.FromResult(true);
+
         Task<IList<SonarRule>> ISonarWebServer.GetRules(string qProfile)
         {
             LogMethodCalled();

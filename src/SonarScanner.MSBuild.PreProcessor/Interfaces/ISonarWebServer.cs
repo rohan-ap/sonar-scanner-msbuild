@@ -69,5 +69,7 @@ namespace SonarScanner.MSBuild.PreProcessor
         Task<IList<SensorCacheEntry>> DownloadCache(ProcessedArgs localSettings);
 
         Task<bool> IsServerLicenseValid();
+
+        Task<bool> ProjectExists(string projectKey);
     }
 }

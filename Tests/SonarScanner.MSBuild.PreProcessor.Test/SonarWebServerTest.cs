@@ -23,6 +23,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -790,6 +791,58 @@ namespace SonarScanner.MSBuild.PreProcessor.Test
             var result = await sut.TryDownloadEmbeddedFile(pluginKey, fileName, Path.GetRandomFileName());
 
             result.Should().BeTrue();
+        }
+
+        [TestMethod]
+        public async Task ProjectExists_ProjectDoesExist_ReturnTrue()
+        {
+            var downloaderMock = new Mock<IDownloader>();
+            downloaderMock.Setup(x => x.GetBaseUri()).Returns(new Uri("http://myhost:222"));
+            downloaderMock.Setup(x => x.DownloadResource(It.IsAny<Uri>())).ReturnsAsync(new HttpResponseMessage { StatusCode = HttpStatusCode.OK });
+            var server = new SonarWebServerStub(downloaderMock.Object, version, logger, null);
+
+            var result = await server.ProjectExists("my-project");
+
+            result.Should().BeTrue();
+            logger.AssertNoErrorsLogged();
+            logger.AssertNoWarningsLogged();
+        }
+
+        [TestMethod]
+        public async Task ProjectExists_ProjectDoesNotExist_ReturnFalse()
+        {
+            var downloaderMock = new Mock<IDownloader>();
+            downloaderMock.Setup(x => x.GetBaseUri()).Returns(new Uri("http://myhost:222"));
+            downloaderMock.Setup(x => x.DownloadResource(It.IsAny<Uri>())).ReturnsAsync(new HttpResponseMessage { StatusCode = HttpStatusCode.NotFound });
+            var server = new SonarWebServerStub(downloaderMock.Object, version, logger, null);
+
+            var result = await server.ProjectExists("my-project");
+
+            result.Should().BeFalse();
+            logger.AssertNoErrorsLogged();
+            logger.AssertNoWarningsLogged();
+        }
+
+        public static IEnumerable<object[]> UnexpectedHttpCodeData =>
+            Enum.GetValues(typeof(HttpStatusCode))
+                .Cast<HttpStatusCode>()
+                .Where(x => x != HttpStatusCode.OK && x != HttpStatusCode.NotFound) // Those are expected StatusCode
+                .Select(x => new object[] { x });
+
+        [TestMethod]
+        [DynamicData(nameof(UnexpectedHttpCodeData))]
+        public async Task ProjectExists_UnexpectedStatusCode_ShouldThrowWithLog(HttpStatusCode statusCode)
+        {
+            var downloaderMock = new Mock<IDownloader>();
+            downloaderMock.Setup(x => x.GetBaseUri()).Returns(new Uri("http://myhost:222"));
+            downloaderMock.Setup(x => x.DownloadResource(It.IsAny<Uri>())).ReturnsAsync(new HttpResponseMessage { StatusCode = statusCode });
+            var server = new SonarWebServerStub(downloaderMock.Object, version, logger, null);
+
+            Func<Task> act = async () => await server.ProjectExists("my-project");
+
+            await act.Should().ThrowExactlyAsync<HttpRequestException>();
+            logger.AssertErrorLogged(string.Format(Resources.ERR_UnexpectedHttpStatusCode, statusCode));
+            logger.AssertNoWarningsLogged();
         }
 
         private class SonarWebServerStub : SonarWebServer
