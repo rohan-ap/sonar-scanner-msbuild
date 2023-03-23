@@ -168,8 +168,8 @@ Use '/?' or '/h' to see the help message.</value>
   <data name="ERR_UnlicensedServer" xml:space="preserve">
     <value>Your SonarQube instance seems to have an invalid license. Please check it. Server url: {0}</value>
   </data>
-  <data name="ERR_ProjectDoesNotExist" xml:space="preserve">
-    <value>The provided project key does not exist. Project key: {0}</value>
+  <data name="ERR_ProjectDoesNotExistAndCannotCreateProjects" xml:space="preserve">
+    <value>Project does not exist or insufficient permissions to create new projects. Project key: {0}</value>
   </data>
   <data name="ERR_UnexpectedHttpStatusCode" xml:space="preserve">
     <value>Unexpected HTTP Status code: {0}</value>
@@ -215,6 +215,9 @@ Use '/?' or '/h' to see the help message.</value>
   </data>
   <data name="MSG_CheckingProjectExist" xml:space="preserve">
     <value>Checking if project '{0}' exists...</value>
+  </data>
+  <data name="MSG_CheckingUserCanCreateProject" xml:space="preserve">
+    <value>Checking if current user can create project...</value>
   </data>
   <data name="MSG_FetchingRules" xml:space="preserve">
     <value>Fetching rules for quality profile '{0}' from {1}...</value>

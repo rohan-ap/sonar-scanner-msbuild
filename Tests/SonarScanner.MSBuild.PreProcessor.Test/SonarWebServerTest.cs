@@ -794,14 +794,14 @@ namespace SonarScanner.MSBuild.PreProcessor.Test
         }
 
         [TestMethod]
-        public async Task ProjectExists_ProjectDoesExist_ReturnTrue()
+        public async Task ProjectExistsOrCanCreateProjects_ProjectDoesExist_ReturnTrue()
         {
             var downloaderMock = new Mock<IDownloader>();
             downloaderMock.Setup(x => x.GetBaseUri()).Returns(new Uri("http://myhost:222"));
             downloaderMock.Setup(x => x.DownloadResource(It.IsAny<Uri>())).ReturnsAsync(new HttpResponseMessage { StatusCode = HttpStatusCode.OK });
             var server = new SonarWebServerStub(downloaderMock.Object, version, logger, null);
 
-            var result = await server.ProjectExists("my-project");
+            var result = await server.ProjectExistsOrCanCreateProjects("my-project");
 
             result.Should().BeTrue();
             logger.AssertNoErrorsLogged();
@@ -809,14 +809,29 @@ namespace SonarScanner.MSBuild.PreProcessor.Test
         }
 
         [TestMethod]
-        public async Task ProjectExists_ProjectDoesNotExist_ReturnFalse()
+        public async Task ProjectExistsOrCanCreateProjects_ProjectDoesNotExistButCanCreateProject_ReturnTrue()
+        {
+            var downloaderMock = new Mock<IDownloader>();
+            downloaderMock.Setup(x => x.GetBaseUri()).Returns(new Uri("http://myhost:222"));
+            downloaderMock.Setup(x => x.DownloadResource(It.IsAny<Uri>())).ReturnsAsync(new HttpResponseMessage { StatusCode = HttpStatusCode.OK });
+            var server = new SonarWebServerStub(downloaderMock.Object, version, logger, null, true);
+
+            var result = await server.ProjectExistsOrCanCreateProjects("my-project");
+
+            result.Should().BeTrue();
+            logger.AssertNoErrorsLogged();
+            logger.AssertNoWarningsLogged();
+        }
+
+        [TestMethod]
+        public async Task ProjectExistsOrCanCreateProjects_ProjectDoesNotExistAndCannotCreateProject_ReturnFalse()
         {
             var downloaderMock = new Mock<IDownloader>();
             downloaderMock.Setup(x => x.GetBaseUri()).Returns(new Uri("http://myhost:222"));
             downloaderMock.Setup(x => x.DownloadResource(It.IsAny<Uri>())).ReturnsAsync(new HttpResponseMessage { StatusCode = HttpStatusCode.NotFound });
             var server = new SonarWebServerStub(downloaderMock.Object, version, logger, null);
 
-            var result = await server.ProjectExists("my-project");
+            var result = await server.ProjectExistsOrCanCreateProjects("my-project");
 
             result.Should().BeFalse();
             logger.AssertNoErrorsLogged();
@@ -831,14 +846,14 @@ namespace SonarScanner.MSBuild.PreProcessor.Test
 
         [TestMethod]
         [DynamicData(nameof(UnexpectedHttpCodeData))]
-        public async Task ProjectExists_UnexpectedStatusCode_ShouldThrowWithLog(HttpStatusCode statusCode)
+        public async Task ProjectExistsOrCanCreateProjects_UnexpectedStatusCode_ShouldThrowAndLogError(HttpStatusCode statusCode)
         {
             var downloaderMock = new Mock<IDownloader>();
             downloaderMock.Setup(x => x.GetBaseUri()).Returns(new Uri("http://myhost:222"));
             downloaderMock.Setup(x => x.DownloadResource(It.IsAny<Uri>())).ReturnsAsync(new HttpResponseMessage { StatusCode = statusCode });
             var server = new SonarWebServerStub(downloaderMock.Object, version, logger, null);
 
-            Func<Task> act = async () => await server.ProjectExists("my-project");
+            Func<Task> act = async () => await server.ProjectExistsOrCanCreateProjects("my-project");
 
             await act.Should().ThrowExactlyAsync<HttpRequestException>();
             logger.AssertErrorLogged(string.Format(Resources.ERR_UnexpectedHttpStatusCode, statusCode));
@@ -847,13 +862,17 @@ namespace SonarScanner.MSBuild.PreProcessor.Test
 
         private class SonarWebServerStub : SonarWebServer
         {
-            public SonarWebServerStub(IDownloader downloader, Version serverVersion, ILogger logger, string organization)
+            private readonly bool canCreateProject;
+
+            public SonarWebServerStub(IDownloader downloader, Version serverVersion, ILogger logger, string organization, bool canCreateProject = false)
                 : base(downloader, serverVersion, logger, organization)
             {
+                this.canCreateProject = canCreateProject;
             }
 
             public override Task<IList<SensorCacheEntry>> DownloadCache(ProcessedArgs localSettings) => throw new NotImplementedException();
             public override Task<bool> IsServerLicenseValid() => throw new NotImplementedException();
+            protected override Task<bool> CanCreateProjects() => Task.FromResult(canCreateProject);
         }
     }
 }

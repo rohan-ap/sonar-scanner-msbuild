@@ -70,6 +70,6 @@ namespace SonarScanner.MSBuild.PreProcessor
 
         Task<bool> IsServerLicenseValid();
 
-        Task<bool> ProjectExists(string projectKey);
+        Task<bool> ProjectExistsOrCanCreateProjects(string projectKey);
     }
 }

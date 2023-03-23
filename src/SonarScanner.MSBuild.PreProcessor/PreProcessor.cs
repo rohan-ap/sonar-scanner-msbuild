@@ -86,9 +86,9 @@ namespace SonarScanner.MSBuild.PreProcessor
                     return false;
                 }
 
-                if (!await server.ProjectExists(localSettings.ProjectKey))
+                if (!await server.ProjectExistsOrCanCreateProjects(localSettings.ProjectKey))
                 {
-                    logger.LogError(Resources.ERR_ProjectDoesNotExist, localSettings.ProjectKey);
+                    logger.LogError(Resources.ERR_ProjectDoesNotExistAndCannotCreateProjects, localSettings.ProjectKey);
                     return false;
                 }
             }

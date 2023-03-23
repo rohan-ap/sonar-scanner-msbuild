@@ -55,7 +55,7 @@ namespace SonarScanner.MSBuild.PreProcessor.WebServer
 
         public abstract Task<bool> IsServerLicenseValid();
 
-        public async Task<bool> ProjectExists(string projectKey)
+        public async Task<bool> ProjectExistsOrCanCreateProjects(string projectKey)
         {
             var uri = GetUri("api/components/tree?qualifiers=TRK&component={0}", projectKey);
             logger.LogDebug(Resources.MSG_CheckingProjectExist, projectKey);
@@ -66,16 +66,18 @@ namespace SonarScanner.MSBuild.PreProcessor.WebServer
                 switch (response.StatusCode)
                 {
                     case HttpStatusCode.NotFound:
-                        return false;
+                        logger.LogDebug(Resources.MSG_CheckingUserCanCreateProject);
+                        return await CanCreateProjects();
                     case HttpStatusCode.OK:
                         return true;
                     default:
-                        // TODO: How do we want to handle this case (which might not happen)?
                         logger.LogError(Resources.ERR_UnexpectedHttpStatusCode, response.StatusCode);
                         throw new HttpRequestException();
                 }
             }, uri);
         }
+
+        protected abstract Task<bool> CanCreateProjects();
 
         public async Task<Tuple<bool, string>> TryGetQualityProfile(string projectKey, string projectBranch, string language)
         {

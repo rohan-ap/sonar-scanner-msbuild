@@ -123,11 +123,11 @@ namespace SonarScanner.MSBuild.PreProcessor {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The provided project key does not exist. Project key: {0}.
+        ///   Looks up a localized string similar to Project does not exist or insufficient permissions to create new projects. Project key: {0}.
         /// </summary>
-        internal static string ERR_ProjectDoesNotExist {
+        internal static string ERR_ProjectDoesNotExistAndCannotCreateProjects {
             get {
-                return ResourceManager.GetString("ERR_ProjectDoesNotExist", resourceCulture);
+                return ResourceManager.GetString("ERR_ProjectDoesNotExistAndCannotCreateProjects", resourceCulture);
             }
         }
         
@@ -248,6 +248,15 @@ namespace SonarScanner.MSBuild.PreProcessor {
         internal static string MSG_CheckingProjectExist {
             get {
                 return ResourceManager.GetString("MSG_CheckingProjectExist", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Checking if current user can create project....
+        /// </summary>
+        internal static string MSG_CheckingUserCanCreateProject {
+            get {
+                return ResourceManager.GetString("MSG_CheckingUserCanCreateProject", resourceCulture);
             }
         }
         

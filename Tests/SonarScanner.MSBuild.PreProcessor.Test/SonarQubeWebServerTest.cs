@@ -557,6 +557,70 @@ namespace SonarScanner.MSBuild.PreProcessor.Test
             logger.AssertSingleWarningExists("Incremental PR analysis: an error occurred while retrieving the cache entries! While parsing a protocol message, the input ended unexpectedly in the middle of a field.  This could mean either that the input has been truncated or that an embedded message misreported its own length.");
         }
 
+        [TestMethod]
+        public async Task ProjectExistsOrCanCreateProjects_ProjectDoesNotExistAndCannotCreateProject_ReturnFalse()
+        {
+            const string projectKey = "my-project";
+            var downloaderMock = new Mock<IDownloader>();
+            downloaderMock.Setup(x => x.GetBaseUri()).Returns(new Uri("http://myhost:222"));
+            downloaderMock.Setup(x => x.DownloadResource(new Uri($"http://myhost:222/api/components/tree?qualifiers=TRK&component={projectKey}")))
+                          .ReturnsAsync(new HttpResponseMessage { StatusCode = HttpStatusCode.NotFound });
+            downloaderMock.Setup(x => x.DownloadResource(new Uri("http://myhost:222/api/users/current")))
+                          .ReturnsAsync(new HttpResponseMessage { StatusCode = HttpStatusCode.OK, Content = new StringContent(@"{""permissions"":{""global"":[]}}") });
+            var server = new SonarQubeWebServer(downloaderMock.Object, version, logger, null);
+
+            var result = await server.ProjectExistsOrCanCreateProjects(projectKey);
+
+            result.Should().BeFalse();
+            logger.AssertNoErrorsLogged();
+            logger.AssertNoWarningsLogged();
+        }
+
+        [TestMethod]
+        public async Task ProjectExistsOrCanCreateProjects_ProjectDoesNotExistButCanCreateProject_ReturnTrue()
+        {
+            const string projectKey = "my-project";
+            var downloaderMock = new Mock<IDownloader>();
+            downloaderMock.Setup(x => x.GetBaseUri()).Returns(new Uri("http://myhost:222"));
+            downloaderMock.Setup(x => x.DownloadResource(new Uri($"http://myhost:222/api/components/tree?qualifiers=TRK&component={projectKey}")))
+                          .ReturnsAsync(new HttpResponseMessage { StatusCode = HttpStatusCode.NotFound });
+            downloaderMock.Setup(x => x.DownloadResource(new Uri("http://myhost:222/api/users/current")))
+                          .ReturnsAsync(new HttpResponseMessage { StatusCode = HttpStatusCode.OK, Content = new StringContent(@"{""permissions"":{""global"":[""provisioning""]}}") });
+            var server = new SonarQubeWebServer(downloaderMock.Object, version, logger, null);
+
+            var result = await server.ProjectExistsOrCanCreateProjects(projectKey);
+
+            result.Should().BeTrue();
+            logger.AssertNoErrorsLogged();
+            logger.AssertNoWarningsLogged();
+        }
+
+        public static IEnumerable<object[]> UnexpectedHttpCodeData =>
+            Enum.GetValues(typeof(HttpStatusCode))
+                .Cast<HttpStatusCode>()
+                .Where(x => x != HttpStatusCode.OK && x != HttpStatusCode.NotFound) // Those are expected StatusCode
+                .Select(x => new object[] { x });
+
+        [TestMethod]
+        [DynamicData(nameof(UnexpectedHttpCodeData))]
+        public async Task ProjectExistsOrCanCreateProjects_UnexpectedStatusCode_ShouldThrowAndLogError(HttpStatusCode statusCode)
+        {
+            const string projectKey = "my-project";
+            var downloaderMock = new Mock<IDownloader>();
+            downloaderMock.Setup(x => x.GetBaseUri()).Returns(new Uri("http://myhost:222"));
+            downloaderMock.Setup(x => x.DownloadResource(new Uri($"http://myhost:222/api/components/tree?qualifiers=TRK&component={projectKey}")))
+                          .ReturnsAsync(new HttpResponseMessage { StatusCode = HttpStatusCode.NotFound });
+            downloaderMock.Setup(x => x.DownloadResource(new Uri("http://myhost:222/api/users/current")))
+                          .ReturnsAsync(new HttpResponseMessage { StatusCode = statusCode });
+            var server = new SonarQubeWebServer(downloaderMock.Object, version, logger, null);
+
+            Func<Task> act = async () => await server.ProjectExistsOrCanCreateProjects(projectKey);
+
+            await act.Should().ThrowExactlyAsync<HttpRequestException>();
+            logger.AssertErrorLogged(string.Format(Resources.ERR_UnexpectedHttpStatusCode, statusCode));
+            logger.AssertNoWarningsLogged();
+        }
+
         private static Stream CreateCacheStream(IMessage message)
         {
             var stream = new MemoryStream();

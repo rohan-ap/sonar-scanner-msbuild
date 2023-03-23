@@ -22,6 +22,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using SonarScanner.MSBuild.Common;
@@ -69,6 +70,26 @@ namespace SonarScanner.MSBuild.PreProcessor.WebServer
             {
                 return json["isValidLicense"].ToObject<bool>();
             }
+        }
+
+        protected override async Task<bool> CanCreateProjects()
+        {
+            const string createProjectPermission = "provisioning";
+
+            var uri = GetUri("api/users/current");
+            return await ExecuteWithLogs(async () =>
+            {
+                var response = await downloader.DownloadResource(uri);
+                switch (response.StatusCode)
+                {
+                    case HttpStatusCode.OK:
+                        var json = JObject.Parse(await response.Content.ReadAsStringAsync());
+                        return json["permissions"].Value<JArray>("global").Any(x => x.Value<string>() == createProjectPermission);
+                    default:
+                        logger.LogError(Resources.ERR_UnexpectedHttpStatusCode, response.StatusCode);
+                        throw new HttpRequestException();
+                }
+            }, uri);
         }
 
         public override async Task<IList<SensorCacheEntry>> DownloadCache(ProcessedArgs localSettings)

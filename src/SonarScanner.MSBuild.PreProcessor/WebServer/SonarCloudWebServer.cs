@@ -59,6 +59,8 @@ namespace SonarScanner.MSBuild.PreProcessor.WebServer
             return Task.FromResult(true);
         }
 
+        protected override Task<bool> CanCreateProjects() => throw new NotImplementedException();
+
         public override async Task<IList<SensorCacheEntry>> DownloadCache(ProcessedArgs localSettings)
         {
             _ = localSettings ?? throw new ArgumentNullException(nameof(localSettings));
